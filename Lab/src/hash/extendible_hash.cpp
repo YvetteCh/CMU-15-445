@@ -13,56 +13,68 @@ namespace cmudb {
  * constructor
  * array_size: fixed array size for each bucket
  */
-template <typename K, typename V>
-ExtendibleHash<K, V>::ExtendibleHash(size_t size)
-: bucket_size_(size), bucket_count_(0),
-    pair_count_(0), depth(0) {
-    bucket_.emplace_back(new Bucket(0, 0));
-    bucket_count_ = 1;
+
+template<typename K, typename V>
+ExtendibleHash<K, V>::ExtendibleHash(size_t size):
+bucket_size_(size), bucket_count_(0),pair_count_(0),depth(0){
+    bucket_.emplace_back(new Bucket(0,0));
 }
+
+
 
 /*
  * helper function to calculate the hashing address of input key
  * std::hash<>: assumption already has specialization for type K
  * namespace std have standard specializations for basic types.
  */
-template <typename K, typename V>
-size_t ExtendibleHash<K, V>::HashKey(const K &key) {
+
+
+template<typename K, typename V>
+size_t ExtendibleHash<K,V>::HashKey(const K &key) {
     return std::hash<K>()(key);
 }
+
 
 
 /*
  * helper function to return global depth of hash table
  * NOTE: you must implement this function in order to pass test
  */
-template <typename K, typename V>
-int ExtendibleHash<K, V>::GetGlobalDepth() const {
+template<typename K, typename V>
+int ExtendibleHash<K,V>::GetGlobalDepth() const {
     std::lock_guard<std::mutex> lock(mutex_);
-    return depth;
+    retrurn depth;
 }
+
+
 
 /*
  * helper function to return local depth of one specific bucket
  * NOTE: you must implement this function in order to pass test
  */
-template <typename K, typename V>
-int ExtendibleHash<K, V>::GetLocalDepth(int bucket_id) const {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if(bucket_[bucket_id]) {
-        return bucket_[bucket_id]->depth;
-    }
-    return -1;
-}
+
+
+
+
+// template <typename K, typename V>
+// int ExtendibleHash<K, V>::GetLocalDepth(int bucket_id) const {
+//     std::lock_guard<std::mutex> lock(mutex_);
+//     if(bucket_[bucket_id]) {
+//         return bucket_[bucket_id]->depth;
+//     }
+//     return -1;
+// }
 
 /*
  * helper function to return current number of bucket in hash table
  */
-template <typename K, typename V>
-int ExtendibleHash<K, V>::GetNumBuckets() const {
+template<typename K, typename V>
+int ExtendibleHash<K, V>::GetNumBuckets() const{
     std::lock_guard<std::mutex> lock(mutex_);
     return bucket_count_;
 }
+
+
 
 
 /*
