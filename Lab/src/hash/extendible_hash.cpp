@@ -27,8 +27,6 @@ bucket_size_(size), bucket_count_(0),pair_count_(0),depth(0){
  * std::hash<>: assumption already has specialization for type K
  * namespace std have standard specializations for basic types.
  */
-
-
 template<typename K, typename V>
 size_t ExtendibleHash<K,V>::HashKey(const K &key) {
     return std::hash<K>()(key);
@@ -47,23 +45,20 @@ int ExtendibleHash<K,V>::GetGlobalDepth() const {
 }
 
 
-
 /*
  * helper function to return local depth of one specific bucket
  * NOTE: you must implement this function in order to pass test
  */
+template<typename K, typename V>
+int  ExtendibleHash<K,V>::GetLocalDepth(int bucket_id) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if(bucket_id <= bucket_.size) {
+        return bucket_[bucket_id] -> depth;
+    }
+    return -1;
+}
 
 
-
-
-// template <typename K, typename V>
-// int ExtendibleHash<K, V>::GetLocalDepth(int bucket_id) const {
-//     std::lock_guard<std::mutex> lock(mutex_);
-//     if(bucket_[bucket_id]) {
-//         return bucket_[bucket_id]->depth;
-//     }
-//     return -1;
-// }
 
 /*
  * helper function to return current number of bucket in hash table
@@ -76,41 +71,37 @@ int ExtendibleHash<K, V>::GetNumBuckets() const{
 
 
 
-
 /*
  * lookup function to find value associate with input key
  */
-template <typename K, typename V>
+template<typename K, typename V>
 bool ExtendibleHash<K, V>::Find(const K &key, V &value) {
     std::lock_guard<std::mutex> lock(mutex_);
-    size_t position = HashKey(key) & ((1 << depth) - 1);
-
-    if(bucket_[position]) {
-        if(bucket_[position]->items.find(key) != bucket_[position]->items.end()) {
-            value = bucket_[position]->items[key];
-            return true;
-        }
+    size_t position = (std::hash<K>()(key)) & ((1 << depth) - 1);
+    if(bucket_.size() >= position && (bucket_[position] -> items).find(key) != (bucket_[position] -> items).end()) {
+        value = bucket_[position] -> items[key];
+        return true;
     }
     return false;
 }
+
 
 /*
  * delete <key,value> entry in hash table
  * Shrink & Combination is not required for this project
  */
-template <typename K, typename V>
+template<typename K, typename V>
 bool ExtendibleHash<K, V>::Remove(const K &key) {
     std::lock_guard<std::mutex> lock(mutex_);
-    size_t position = HashKey(key) & ((1 << depth) - 1);
-    size_t cnt = 0;
-
-    if(bucket_[position]) {
-        auto tmp_bucket = bucket_[position];
-        cnt = tmp_bucket->items.erase(key);
-        pair_count_ -= cnt;
+    size_t position = (HashKey(key)) & ((1 << depth) - 1);
+    if(bucket_.size() >= position && (bucket_[position] -> items).find(key) != (bucket_[position] -> items).end()) {
+        bucket_[position] -> items.erase(key);
+        pair_count_--;
+        return true;
     }
-    return cnt != 0;
+    return false;
 }
+
 
 
 /*
@@ -118,6 +109,56 @@ bool ExtendibleHash<K, V>::Remove(const K &key) {
  * Split & Redistribute bucket when there is overflow and if necessary increase
  * global depth
  */
+
+template<typename K, typename V>
+void ExtendibleHash<K, V>::Insert(const K &key, const V &value) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    size_t position = (HashKey(key)) & ((1 << depth) - 1);
+
+    // bucket is nullptr
+    if(bucket_[position] == nullptr) {
+        bucket_[position] = std::make_shared<Bucket>(position, depth);
+        bucket_count_++;
+    }
+
+    // key exits
+    if(bucket_[position] -> items.find(key) != bucket_[position] -> items.end) {
+        bucket_[position] -> items[key] = value;
+        return;
+    }
+
+    // enough space, insert it
+    if(bucket_[position]->items.size() < bucket_size_) {
+        bucket_[position]->items[key] = value;
+        pair_count_++;
+        return;
+    }
+
+    bucket_[position] -> items[key] = value;
+    
+    // global_depth = bucket_depth, split, regular
+    if(depth = bucket_[position]->depth) {
+
+    } else {
+        bucket_[position] = std::make_shared<Bucket>(position, )
+    }
+
+    // global_depth > bucket_depth, no split, regular
+
+}
+
+
+template<typename K, typename V>
+std::shared_ptr<typename ExtendibleHash<K, V>::Bucket> 
+ExtendibleHash<K, V>::split(std::shared_ptr<Bucket> &) {
+
+}
+
+
+
+
+
+
 template <typename K, typename V>
 void ExtendibleHash<K, V>::Insert(const K &key, const V &value) {
     std::lock_guard<std::mutex> lock(mutex_);
