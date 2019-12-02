@@ -140,9 +140,9 @@ void ExtendibleHash<K, V>::Insert(const K &key, const V &value) {
     auto bucket = bucket_[position];
     if(bucket->items.size() > bucket_size_) {
         auto old_index = bucket->id;
-        auto new_bucket = split(bucket);
         auto old_size = bucket_.size();
-        auto old_depth = depth;
+        auto old_depth = bucket->depth;
+        auto new_bucket = split(bucket);
         
         if(new_bucket->depth > depth) {    
             auto factor = 1<<(new_bucket-> depth - old_depth);
@@ -158,7 +158,7 @@ void ExtendibleHash<K, V>::Insert(const K &key, const V &value) {
                 }
             }
         } else {
-            for(int i = old_depth; i < bucket_.size(); i++) {
+            for(int i = old_index; i < bucket_.size(); i+=(1<<old_depth)) {
                 bucket_[i].reset();
             }
             bucket_[bucket->id] = bucket;
