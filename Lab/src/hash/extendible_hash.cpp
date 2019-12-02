@@ -41,7 +41,7 @@ size_t ExtendibleHash<K,V>::HashKey(const K &key) {
 template<typename K, typename V>
 int ExtendibleHash<K,V>::GetGlobalDepth() const {
     std::lock_guard<std::mutex> lock(mutex_);
-    retrurn depth;
+    return depth;
 }
 
 
@@ -52,7 +52,7 @@ int ExtendibleHash<K,V>::GetGlobalDepth() const {
 template<typename K, typename V>
 int  ExtendibleHash<K,V>::GetLocalDepth(int bucket_id) const {
     std::lock_guard<std::mutex> lock(mutex_);
-    if(bucket_id <= bucket_.size) {
+    if(bucket_[bucket_id]) {
         return bucket_[bucket_id] -> depth;
     }
     return -1;
@@ -122,7 +122,7 @@ void ExtendibleHash<K, V>::Insert(const K &key, const V &value) {
     }
 
     // key exits
-    if(bucket_[position] -> items.find(key) != bucket_[position] -> items.end) {
+    if(bucket_[position] -> items.find(key) != bucket_[position] -> items.end()) {
         bucket_[position] -> items[key] = value;
         return;
     }
@@ -148,26 +148,26 @@ void ExtendibleHash<K, V>::Insert(const K &key, const V &value) {
             auto factor = 1<<(new_bucket-> depth - old_depth);
             bucket_.resize(old_size * factor);
             bucket_[bucket->id] = bucket;
-            bucket_[new_bucket->id] = new_bucket->id;
+            bucket_[new_bucket->id] = new_bucket;
 
-            for (int i = 0; i < bucket_.size(); i++) {
+            for (size_t i = 0; i < bucket_.size(); i++) {
                 if(bucket_[i]) {
                     auto step = 1 << bucket_[i]->depth;
-                    for(int j = i + step; j < bucket_.size(); j+= step)
+                    for(size_t j = i + step; j < bucket_.size(); j+= step)
                         bucket_[j] = bucket_[i];
                 }
             }
         } else {
-            for(int i = old_index; i < bucket_.size(); i+=(1<<old_depth)) {
+            for(size_t i = old_index; i < bucket_.size(); i+=(1<<old_depth)) {
                 bucket_[i].reset();
             }
             bucket_[bucket->id] = bucket;
             bucket_[new_bucket->id] = new_bucket;
             auto step = 1 << bucket->depth;
-            for(int i = bucket->id + step; i < bucket_.size(); i+= step)
-                bucket_[i] = bucket_[bucket];
-            for(int i = new_bucket->id + step; i < bucket_.size(); i+= step)
-                bucket_[i] = bucket_[new_bucket];
+            for(size_t i = bucket->id + step; i < bucket_.size(); i+= step)
+                bucket_[i] = bucket_[bucket->id];
+            for(size_t i = new_bucket->id + step; i < bucket_.size(); i+= step)
+                bucket_[i] = bucket_[new_bucket->id];
         }
     }
 
